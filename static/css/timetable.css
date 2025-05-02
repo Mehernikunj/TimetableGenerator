@@ -221,4 +221,29 @@
   #toggle-theme:hover {
     background-color: #1e5e87;
   }
+/* Slots Remaining Highlight */
+.slots-remaining {
+  margin-top: 5px;
+  font-weight: bold;
+}
+
+.slots-remaining .slot-count {
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+.slots-remaining .slot-count.zero {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.slots-remaining .slot-count.partial {
+  background-color: #FF9800;
+  color: white;
+}
+
+.slots-remaining .slot-count.full {
+  background-color: #F44336;
+  color: white;
+}
   

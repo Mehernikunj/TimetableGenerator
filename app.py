@@ -43,9 +43,12 @@ class Timetable(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     data = db.Column(db.Text, nullable=False)  # Store JSON data as a string
 
+from flask import current_app
+
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    with app.app_context():
+        return db.session.get(User, int(user_id))
 
 # Home page (protected)
 @app.route('/home')
@@ -179,7 +182,3 @@ if __name__ == '__main__':
     with app.app_context():
         db.create_all()
     app.run(debug=True)
-if __name__ == '__main__':
-    import os
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
