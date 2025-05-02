@@ -313,4 +313,199 @@ document.addEventListener("DOMContentLoaded", () => {
       document.body.classList.toggle("dark-mode");
     });
   });
-  
+  // ...everything before remains unchanged
+
+function attachSubjectAndSectionListeners() {
+  document.querySelectorAll(".generate-sections").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const div = btn.closest(".department");
+      const count = parseInt(div.querySelector(".section-count").value);
+      const container = div.querySelector(".sections-container");
+      container.innerHTML = "";
+
+      for (let i = 0; i < count; i++) {
+        const input = document.createElement("input");
+        input.type = "text";
+        input.classList.add("section-name");
+        input.placeholder = `Section ${String.fromCharCode(65 + i)}`;
+        container.appendChild(input);
+      }
+    });
+  });
+
+  document.querySelectorAll(".add-subject").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const container = btn.closest(".department").querySelector(".subjects-container");
+      const div = document.createElement("div");
+      div.classList.add("subject-entry");
+      div.innerHTML = `
+        <label>Subject:</label>
+        <input type="text" class="subject" required>
+        <label>Teachers (comma-separated):</label>
+        <input type="text" class="teachers" required>
+        <label>Lab:</label>
+        <input type="checkbox" class="isLab">
+        <label>Frequency:</label>
+        <input type="number" class="frequency" min="1" max="10" required>
+        <label>Lab Duration:</label>
+        <input type="number" class="duration" min="1" max="6" value="1">
+        <p class="slots-remaining">Slots Remaining: <span class="slot-count">?</span></p>
+      `;
+      container.appendChild(div);
+    });
+  });
+}
+
+// ...everything before remains unchanged
+
+timetableForm.addEventListener("submit", (e) => {
+  e.preventDefault();
+
+  const layout = calculatePreviewLayout();
+  if (!layout) return;
+
+  const workingDays = parseInt(workingDaysSelect.value);
+  const daysOfWeek = allDays.slice(0, workingDays);
+  timetableDisplay.innerHTML = "";
+
+  document.querySelectorAll(".department").forEach(deptDiv => {
+    const className = deptDiv.querySelector(".class-name").value;
+    const sectionNames = Array.from(deptDiv.querySelectorAll(".section-name")).map(i => i.value.trim());
+
+    const subjects = Array.from(deptDiv.querySelectorAll(".subject-entry")).map(div => {
+      const slotDisplay = div.querySelector(".slot-count");
+      slotDisplay.textContent = "?"; // Reset before allocation
+
+      return {
+        div,
+        name: div.querySelector(".subject").value,
+        teachers: div.querySelector(".teachers").value.split(",").map(t => t.trim()),
+        isLab: div.querySelector(".isLab").checked,
+        frequency: parseInt(div.querySelector(".frequency").value),
+        duration: parseInt(div.querySelector(".duration").value),
+        remaining: parseInt(div.querySelector(".frequency").value),
+        slotDisplay
+      };
+    });
+
+    const teacherBookings = {};
+
+    sectionNames.forEach(section => {
+      const timetable = {};
+      daysOfWeek.forEach(day => {
+        timetable[day] = layout.map(p => (p.isBreak ? { ...p } : null));
+      });
+
+      subjects.forEach(subject => {
+        let placed = 0;
+
+        for (let d = 0; d < daysOfWeek.length && placed < subject.frequency; d++) {
+          const day = daysOfWeek[d];
+          const slots = timetable[day];
+
+          const alreadyToday = slots.some(s => s && s.subject === subject.name);
+          if (alreadyToday && !subject.isLab) continue;
+
+          for (let i = 0; i <= slots.length - subject.duration; i++) {
+            const slotGroup = slots.slice(i, i + subject.duration);
+            if (slotGroup.some(s => s && s.subject)) continue;
+            if (slotGroup.some(s => s && s.isBreak)) continue;
+
+            if (!subject.isLab && d > 0 && timetable[daysOfWeek[d - 1]][i]?.subject === subject.name) continue;
+
+            const availableTeacher = subject.teachers.find(teacher =>
+              slotGroup.every((_, idx) => !teacherBookings[`${teacher}-${day}-${i + idx}`])
+            );
+
+            if (!availableTeacher) continue;
+
+            for (let j = 0; j < subject.duration; j++) {
+              slots[i + j] = {
+                subject: subject.name,
+                teacher: availableTeacher,
+                isLab: subject.isLab,
+                period: i + j + 1,
+                time: layout[i + j]
+              };
+              teacherBookings[`${availableTeacher}-${day}-${i + j}`] = true;
+            }
+
+            placed++;
+            break;
+          }
+        }
+
+        // Update remaining slots after scheduling
+        subject.remaining = subject.frequency - placed;
+        subject.slotDisplay.textContent = subject.remaining;
+subject.slotDisplay.classList.remove("zero", "partial", "full");
+
+if (subject.remaining === 0) {
+  subject.slotDisplay.classList.add("zero");
+} else if (subject.remaining < subject.frequency) {
+  subject.slotDisplay.classList.add("partial");
+} else {
+  subject.slotDisplay.classList.add("full");
+}
+subject.slotDisplay.classList.remove("zero", "partial", "full");
+
+if (subject.remaining === 0) {
+  subject.slotDisplay.classList.add("zero");
+} else if (subject.remaining < subject.frequency) {
+  subject.slotDisplay.classList.add("partial");
+} else {
+  subject.slotDisplay.classList.add("full");
+}
+subject.slotDisplay.classList.remove("zero", "partial", "full");
+
+if (subject.remaining === 0) {
+  subject.slotDisplay.classList.add("zero");
+} else if (subject.remaining < subject.frequency) {
+  subject.slotDisplay.classList.add("partial");
+} else {
+  subject.slotDisplay.classList.add("full");
+}
+subject.slotDisplay.classList.remove("zero", "partial", "full");
+
+if (subject.remaining === 0) {
+  subject.slotDisplay.classList.add("zero");
+} else if (subject.remaining < subject.frequency) {
+  subject.slotDisplay.classList.add("partial");
+} else {
+  subject.slotDisplay.classList.add("full");
+}
+      });
+
+      const table = document.createElement("table");
+      table.classList.add("timetable-table");
+      const caption = document.createElement("caption");
+      caption.textContent = `${className} - Section ${section}`;
+      table.appendChild(caption);
+
+      const thead = document.createElement("thead");
+      const headRow = document.createElement("tr");
+      headRow.innerHTML = `<th>Day</th>` + layout.map(p => `<th>${p.label}<br>${p.start} - ${p.end}</th>`).join("");
+      thead.appendChild(headRow);
+      table.appendChild(thead);
+
+      const tbody = document.createElement("tbody");
+      daysOfWeek.forEach(day => {
+        const row = document.createElement("tr");
+        row.innerHTML = `<td>${day}</td>`;
+        timetable[day].forEach(cell => {
+          if (cell?.isBreak) {
+            row.innerHTML += `<td><strong>${cell.label}</strong></td>`;
+          } else if (cell) {
+            row.innerHTML += `<td>${cell.subject}<br><small>${cell.teacher}</small>${cell.isLab ? "<br><strong>Lab</strong>" : ""}</td>`;
+          } else {
+            row.innerHTML += "<td></td>";
+          }
+        });
+        tbody.appendChild(row);
+      });
+
+      table.appendChild(tbody);
+      timetableDisplay.appendChild(table);
+    });
+  });
+});
